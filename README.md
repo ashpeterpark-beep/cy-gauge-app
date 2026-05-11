@@ -11,12 +11,12 @@ Full-stack web interface for the CY gauge functor pipeline.
 ```
 cy-gauge-app/
 ├── backend/
-│   ├── main.py          # FastAPI — full CY pipeline
+│   ├── main.py         
 │   ├── requirements.txt
 │   └── Dockerfile
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx      # React dashboard
+│   │   ├── App.jsx     
 │   │   └── main.jsx
 │   ├── index.html
 │   ├── package.json
