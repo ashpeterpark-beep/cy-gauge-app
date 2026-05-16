@@ -10,13 +10,13 @@
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://docker.com)
 [![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
 
+
+</div>
 ---
 
 ## 📊 Dashboard Overview
 
 A professional-grade full-stack interface for computing **discrete Calabi–Yau gauge functors** with interactive visualization and real-time numerical analysis.
-
-</div>
 
 ### Visual Architecture
 
