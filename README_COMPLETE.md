@@ -1,10 +1,6 @@
 # Discrete Calabi–Yau Gauge Functor Dashboard
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009485.svg)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18-61dafb.svg?logo=react)](https://react.dev)
+
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![SciPy](https://img.shields.io/badge/SciPy-NumPy-8CAAE6?logo=scipy&logoColor=white)](https://scipy.org)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://docker.com)
