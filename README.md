@@ -1,3 +1,5 @@
+<div align="center">
+
 # Discrete Calabi–Yau Gauge Functor Dashboard
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -13,6 +15,8 @@
 ## 📊 Dashboard Overview
 
 A professional-grade full-stack interface for computing **discrete Calabi–Yau gauge functors** with interactive visualization and real-time numerical analysis.
+
+</div>
 
 ### Visual Architecture
 
