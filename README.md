@@ -284,6 +284,7 @@ cy-gauge-app/
 ├── .github/workflows/
 │   ├── backend.yml                  
 │   └── frontend.yml                 
+├──Docs/
 ├── Makefile                        
 ├── pyproject.toml                   
 ├── pytest.ini                       
