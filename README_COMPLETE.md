@@ -16,8 +16,7 @@ A professional-grade full-stack interface for computing **discrete Calabi–Yau 
 
 ### Visual Architecture
 
-
-![System Architecture](./architecture.png)
+![Full Stack Architecture](./architecture_ui_api_pipeline.png)
 
 ---
 
