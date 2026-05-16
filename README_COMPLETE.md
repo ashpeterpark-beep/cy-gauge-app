@@ -56,7 +56,7 @@ A professional-grade full-stack interface for computing **discrete Calabi–Yau 
 | Feature | Description |
 |---------|-------------|
 | **🔬 Gauge Field Simulation** | Compute balanced unitary connections on 4D lattices |
-| **📊 Curvature Heat Maps** | Visualize field strength ||F_f|| across all faces |
+| **📊 Curvature Heat Maps** | Visualize field strength ‖F_f‖ across all faces |
 | **🌀 Wall-Crossing Analysis** | Track BPS invariants via central charge variations |
 | **⚡ Spectral Analysis** | Dolbeault Laplacian eigenvalues (shift-invert method) |
 | **🔄 Parameter Sweeps** | Systematic moduli space exploration t ∈ [0,1] |
@@ -183,14 +183,14 @@ POST /api/sweep
 ## 🎮 Dashboard Tabs
 
 ### 1️⃣ Curvature
-- **What:** Heat map of face curvature ||F_f||
+- **What:** Heat map of face curvature ‖F_f‖
 - **Color:** Blue (min) → Red (max)
 - **Interaction:** Hover for values, zoom, pan
 - **Export:** PNG image download
 
 ### 2️⃣ Wall-Crossing
 - **What:** BPS eigenvalue filtration vs parameter t
-- **Lines:** λ₁ (green) and λ₂ (blue)
+- **Lines:** λ₁ (red) and λ₂ (blue)
 - **Analysis:** Stability wall detection
 - **Export:** CSV data, PNG image
 
@@ -205,6 +205,80 @@ POST /api/sweep
 - **Dimension:** Gauge algebra dimension
 - **Settings:** All parameters displayed
 - **Export:** Full JSON data
+
+---
+
+## 📊 Visualization Gallery
+
+### Figure 1 — T⁴ Lattice Geometry (3D Projection)
+
+The app simulates gauge theory on a **discrete 4-torus T⁴**. Below is a 3D projection of the lattice mesh — each point is a vertex, coloured by curvature norm ‖F_f‖. Edges connect nearest neighbours under the periodic boundary conditions.
+
+![T⁴ Lattice Mesh — 3D projection of the discrete Calabi–Yau geometry](./fig1_torus3d.png)
+
+> The 4D manifold is projected into R³ via a Hopf-like fibration. Vertex colour maps to the local U(N) gauge field curvature. Red indicates high curvature, blue indicates low curvature regions in the lattice.
+
+---
+
+### Figure 2 — Face Curvature Heatmap (Tab ① Curvature)
+
+The first dashboard tab renders a live heatmap of **per-face curvature norms ‖F_f‖**, computed from real `face_holonomies()` in the FastAPI backend. Each cell is one triangular face of the simplicial mesh.
+
+![Face curvature heatmap showing per-face ‖F_f‖ values](./fig2_heatmap.png)
+
+> **Light colors (low values)** = low curvature · **Dark colors (high values)** = high curvature.
+> Each cell displays the exact numerical value. The heatmap updates in real-time with parameter changes, providing immediate visual feedback on field strength distribution across the manifold.
+
+---
+
+### Figure 3 — Wall-Crossing Sweep (Tab ② Wall-Crossing)
+
+As the bundle-mixing parameter **t** sweeps from 0 → 1, the slope eigenvalues **λ₁(t)** and **λ₂(t)** trace trajectories. When λ₁ crosses zero, a **Harder–Narasimhan wall** is detected — the bundle changes stability type.
+
+![Wall-crossing sweep showing slope filtration λ₁(t) and λ₂(t)](./fig3_wallcrossing.png)
+
+> **Red line** = λ₁(t) · **Blue line** = λ₂(t) · **Yellow dashed line** = semistability wall (λ = 0) · **Purple dotted line** = detected Harder–Narasimhan wall crossing.
+> The wall-crossing phenomenon reveals how the gauge bundle transitions between different stability conditions as the bundle-mixing parameter varies. This is crucial for understanding BPS invariants in the moduli space.
+
+---
+
+### Figure 4 — Dolbeault Laplacian Spectrum (Tab ③ Spectrum)
+
+The FEEC Dolbeault operator **∂̄** is assembled as a sparse matrix and its Laplacian **Δ = ∂̄†∂̄** diagonalised via `scipy.sparse.linalg.eigsh` with shift-invert. Eigenvalues near zero (< 1e-7) are counted as **zero modes** — harmonic (0,1)-forms.
+
+![Dolbeault Laplacian eigenvalue spectrum with zero mode highlighted in yellow](./fig4_spectrum.png)
+
+> **Red bar** = zero modes (harmonic forms) · **Blue–gradient bars** = higher eigenvalues.
+> The number of zero modes equals the dimension of the kernel of Δ, which directly relates to the dimension of harmonic cohomology. The spectral gap between zero modes and the rest of the spectrum indicates the ellipticity of the operator.
+
+---
+
+### Figure 5 — Numerical Pipeline Architecture
+
+Every computation runs server-side in Python. The diagram below maps the exact call graph in `main.py`, showing how data flows through the numerical pipeline.
+
+![Numerical pipeline: T⁴ mesh → SU(N) links → holonomies → endomorphism → slopes + spectrum](./fig5_pipeline.png)
+
+> **Pipeline Flow:**
+> 1. **build_torus4d()** — Generates the 4D lattice structure
+> 2. **random_suN_links()** — Creates random SU(N) gauge connections
+> 3. **face_holonomies()** — Computes curvature on each face
+> 4. **herm_endomorphism()** — Constructs the Hermitian endomorphism Φ
+> 5. **slope_filtration()** — Computes eigenvalues λ₁, λ₂
+> 6. **effective_gauge_algebra_dim()** — Determines algebra dimension
+> 7. **dolbeault_spectrum()** — Analyzes the Laplacian spectrum
+
+---
+
+### Figure 6 — Gauge Bundle Slope Surfaces (3D)
+
+The **Hermitian endomorphism Φ = Σ ω_f · F_f** evaluated over T⁴ produces two slope surfaces corresponding to eigenvalues λ₁ and λ₂. The geometry of these surfaces encodes the stability of the gauge bundle.
+
+![3D slope surfaces of the Hermitian endomorphism Φ over the torus](./fig6_slopes3d.png)
+
+> **Left Surface (λ₁):** at t = 0, representing the initial bundle state. The topology and critical points of this surface determine the semistability locus.
+> **Right Surface (λ₂):** at t = 1, showing the deformed bundle after parameter variation. The evolution between these surfaces reveals wall-crossing phenomena and BPS state changes.
+> The contour lines indicate level sets where the eigenvalues maintain constant values, helping visualize the geometry of the moduli space.
 
 ---
 
