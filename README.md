@@ -478,7 +478,7 @@ pytest tests/ -vv --tb=short
 |--------|--------|
 | **Version** | 0.1.0 |
 | **Development** | 🚀 Active |
-| **Last Updated** | January 2025 |
+| **Last Updated** | May 2026 |
 | **License** | MIT |
 | **Test Coverage** | 40+ tests |
 | **CI/CD** | GitHub Actions |
