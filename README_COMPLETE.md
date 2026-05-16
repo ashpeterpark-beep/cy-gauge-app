@@ -16,40 +16,8 @@ A professional-grade full-stack interface for computing **discrete Calabi–Yau 
 
 ### Visual Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    USER INTERFACE                           │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │           React 18 + Vite Frontend                   │   │
-│  │  ┌─────────────┬─────────────┬─────────────┐       │   │
-│  │  │  Curvature  │Wall-Crossing│ Spectrum    │ Data  │   │
-│  │  │   Heat Map  │  Analysis   │ Eigenvalues │       │   │
-│  │  └─────────────┴─────────────┴─────────────┘       │   │
-│  │                                                     │   │
-│  │  Parameters: Grid | Gauge | Scale | Spacing       │   │
-│  │  [━━━━━━━━] [━━━━━━━━] [━━━━━━━━] [━━━━━━━━]       │   │
-│  │                                                     │   │
-│  │  ▶ RUN SIMULATION              EXPORT ↓            │   │
-│  └──────────────────────────────────────────────────────┘   │
-│                         ↓ REST API                          │
-├─────────────────────────────────────────────────────────────┤
-│                    API LAYER (FastAPI)                      │
-│  POST /api/run          POST /api/sweep      GET /api/health
-│  ├─ Grid Parameters     ├─ Sweep Range       └─ Health Check
-│  ├─ Gauge Settings      ├─ Phase Parameters
-│  └─ Simulation Options  └─ Step Configuration
-│                         ↓                                    │
-├─────────────────────────────────────────────────────────────┤
-│              NUMERICAL PIPELINE (NumPy/SciPy)              │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │  1. Mesh Generation      → 4-Torus Lattice          │   │
-│  │  2. Gauge Field Setup    → Unitary Connections      │   │
-│  │  3. Curvature Calc       → ||F_f|| per Face         │   │
-│  │  4. Laplacian Analysis   → Eigenvalue Decomposition │   │
-│  │  5. Wall-Crossing Survey → Parameter Space Sweep    │   │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
+
+![System Architecture](./architecture.png)
 
 ---
 
@@ -57,16 +25,16 @@ A professional-grade full-stack interface for computing **discrete Calabi–Yau 
 
 | Feature | Description |
 |---------|-------------|
-| **🔬 Gauge Field Simulation** | Compute balanced unitary connections on 4D lattices |
-| **📊 Curvature Heat Maps** | Visualize field strength ‖F_f‖ across all faces |
-| **🌀 Wall-Crossing Analysis** | Track BPS invariants via central charge variations |
-| **⚡ Spectral Analysis** | Dolbeault Laplacian eigenvalues (shift-invert method) |
-| **🔄 Parameter Sweeps** | Systematic moduli space exploration t ∈ [0,1] |
-| **🎲 Reproducibility** | Seeded RNG for deterministic results |
+| ** Gauge Field Simulation** | Compute balanced unitary connections on 4D lattices |
+| ** Curvature Heat Maps** | Visualize field strength ‖F_f‖ across all faces |
+| ** Wall-Crossing Analysis** | Track BPS invariants via central charge variations |
+| ** Spectral Analysis** | Dolbeault Laplacian eigenvalues (shift-invert method) |
+| ** Parameter Sweeps** | Systematic moduli space exploration t ∈ [0,1] |
+| ** Reproducibility** | Seeded RNG for deterministic results |
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Option 1: Docker (Recommended)
 
@@ -105,39 +73,8 @@ npm run dev
 
 ### Component Diagram
 
-```
-External Client
-    ↓
-    │ HTTP(S)
-    ↓
-┌─────────────────────────────────────────┐
-│      React Frontend (Port 5173)         │
-│  ┌─────────────────────────────────┐   │
-│  │ • Parameter Control Interface   │   │
-│  │ • Real-time Visualization       │   │
-│  │ • Data Export (PNG/CSV/JSON)    │   │
-│  └─────────────────────────────────┘   │
-└────────────────┬────────────────────────┘
-                 │ REST API (JSON)
-┌────────────────▼────────────────────────┐
-│      FastAPI Backend (Port 8000)        │
-│  ┌─────────────────────────────────┐   │
-│  │ • Request Validation (Pydantic) │   │
-│  │ • API Routing & Documentation   │   │
-│  │ • Pipeline Orchestration        │   │
-│  └─────────────────────────────────┘   │
-└────────────────┬────────────────────────┘
-                 │
-┌────────────────▼────────────────────────┐
-│  Numerical Pipeline (NumPy/SciPy)      │
-│  ┌─────────────────────────────────┐   │
-│  │ 1. Lattice Generator            │   │
-│  │ 2. Gauge Field Constructor      │   │
-│  │ 3. Curvature Computation        │   │
-│  │ 4. Sparse Matrix Solver         │   │
-│  │ 5. Parameter Sweep Engine       │   │
-│  └─────────────────────────────────┘   │
-└─────────────────────────────────────────┘
+![System Architecture](./architecture.png)
+
 ```
 
 ---
@@ -327,8 +264,8 @@ make clean             # Clean build artifacts
 ```
 cy-gauge-app/
 ├── backend/
-│   ├── main.py                      # FastAPI application
-│   ├── requirements.txt             # Dependencies
+│   ├── main.py                     
+│   ├── requirements.txt             
 │   └── Dockerfile
 ├── frontend/
 │   ├── src/
@@ -339,15 +276,15 @@ cy-gauge-app/
 │   ├── vite.config.js
 │   └── Dockerfile
 ├── tests/
-│   ├── test_backend.py              # 40+ tests
-│   ├── conftest.py                  # Fixtures
+│   ├── test_backend.py             
+│   ├── conftest.py                 
 │   └── __init__.py
 ├── .github/workflows/
-│   ├── backend.yml                  # CI/CD
-│   └── frontend.yml                 # CI/CD
-├── Makefile                         # Commands
-├── pyproject.toml                   # Config
-├── pytest.ini                       # Test config
+│   ├── backend.yml                  
+│   └── frontend.yml                 
+├── Makefile                        
+├── pyproject.toml                   
+├── pytest.ini                       
 ├── docker-compose.yml
 ├── .gitignore
 └── README.md
@@ -460,7 +397,6 @@ See [LICENSE](LICENSE) file for details.
 ## 👨‍💻 Author
 
 **Gaius Lumen**
-- 🐦 [@GaiusLumen](https://twitter.com/GaiusLumen)
 - 📧 [gaiuslumen@gmail.com](mailto:gaiuslumen@gmail.com)
 - 🔬 Mathematical Physics & Computational Geometry
 
