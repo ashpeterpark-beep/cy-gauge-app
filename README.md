@@ -27,12 +27,12 @@ A professional-grade full-stack interface for computing **discrete Calabi–Yau 
 
 | Feature | Description |
 |---------|-------------|
-| ** Gauge Field Simulation** | Compute balanced unitary connections on 4D lattices |
-| ** Curvature Heat Maps** | Visualize field strength ‖F_f‖ across all faces |
-| ** Wall-Crossing Analysis** | Track BPS invariants via central charge variations |
-| ** Spectral Analysis** | Dolbeault Laplacian eigenvalues (shift-invert method) |
-| ** Parameter Sweeps** | Systematic moduli space exploration t ∈ [0,1] |
-| ** Reproducibility** | Seeded RNG for deterministic results |
+|  Gauge Field Simulation | Compute balanced unitary connections on 4D lattices |
+|  Curvature Heat Maps | Visualize field strength ‖F_f‖ across all faces |
+|  Wall-Crossing Analysis | Track BPS invariants via central charge variations |
+|  Spectral Analysis | Dolbeault Laplacian eigenvalues (shift-invert method) |
+|  Parameter Sweeps | Systematic moduli space exploration t ∈ [0,1] |
+|  Reproducibility | Seeded RNG for deterministic results |
 
 ---
 
