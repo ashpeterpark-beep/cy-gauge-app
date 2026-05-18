@@ -9,14 +9,13 @@ Exposes the full pipeline as REST endpoints:
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import Optional
 import numpy as np
 from scipy.sparse import coo_matrix, eye as speye
 from scipy.sparse.linalg import eigsh, LinearOperator, splu
 from scipy.linalg import eigh, expm
-from itertools import combinations
 import warnings
+
+from schemas import RunParams, SweepParams, RunResponse, SweepResponse, HealthResponse
 
 warnings.filterwarnings("ignore")
 
@@ -29,31 +28,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ─── Request / Response models ─────────────────────────────────────────────────
-
-class RunParams(BaseModel):
-    nx: int = Field(3, ge=2, le=5, description="Grid points per axis (x)")
-    ny: int = Field(3, ge=2, le=5)
-    nz: int = Field(2, ge=2, le=4)
-    nw: int = Field(2, ge=2, le=4)
-    N: int = Field(2, ge=2, le=3, description="U(N) gauge group rank")
-    scale: float = Field(0.05, ge=0.001, le=0.5, description="Link scale epsilon")
-    h2: float = Field(0.01, ge=0.001, le=0.2, description="Lattice spacing squared")
-    seed: int = Field(42, ge=0, le=9999)
-    n_eigs: int = Field(10, ge=2, le=30, description="Eigenvalues of Dolbeault Laplacian")
-
-class SweepParams(BaseModel):
-    nx: int = Field(3, ge=2, le=5)
-    ny: int = Field(3, ge=2, le=5)
-    nz: int = Field(2, ge=2, le=4)
-    nw: int = Field(2, ge=2, le=4)
-    N: int = Field(2, ge=2, le=3)
-    scale: float = Field(0.05, ge=0.001, le=0.5)
-    h2: float = Field(0.01, ge=0.001, le=0.2)
-    mu1: float = Field(0.5, ge=-2.0, le=2.0)
-    mu2: float = Field(-0.3, ge=-2.0, le=2.0)
-    seed: int = Field(42, ge=0, le=9999)
-    steps: int = Field(12, ge=4, le=30)
 
 # ─── SimplicialComplex ─────────────────────────────────────────────────────────
 
@@ -67,6 +41,7 @@ class SimplicialComplex:
         self.nF = len(faces)
         self.edge_index = {tuple(sorted(e)): i for i, e in enumerate(edges)}
 
+
 def build_torus4d(nx=3, ny=3, nz=2, nw=2):
     xs = np.linspace(0, 2 * np.pi, nx, endpoint=False)
     ys = np.linspace(0, 2 * np.pi, ny, endpoint=False)
@@ -79,7 +54,6 @@ def build_torus4d(nx=3, ny=3, nz=2, nw=2):
     for i in range(V):
         for j in range(i + 1, V):
             diff = [abs(vertices[i][d] - vertices[j][d]) for d in range(4)]
-            # also consider periodic wrap-around
             diff_wrap = [min(d, 2 * np.pi - d) for d in diff]
             for d in range(4):
                 if abs(diff_wrap[d] - steps[d]) < 1e-6 and all(
@@ -102,6 +76,7 @@ def build_torus4d(nx=3, ny=3, nz=2, nw=2):
                     faces.add(tuple(sorted((i, j, k))))
     return SimplicialComplex(vertices, edges, list(faces))
 
+
 # ─── Gauge field ───────────────────────────────────────────────────────────────
 
 def random_suN_links(nE, N=2, scale=0.05, rng=None):
@@ -115,6 +90,7 @@ def random_suN_links(nE, N=2, scale=0.05, rng=None):
         U.append(expm(A))
     return U
 
+
 def split_bundle_links(nE, mu1, mu2, t=0.0, scale=0.05, rng=None):
     if rng is None:
         rng = np.random.default_rng(42)
@@ -123,9 +99,13 @@ def split_bundle_links(nE, mu1, mu2, t=0.0, scale=0.05, rng=None):
     for _ in range(nE):
         phi1 = mu1 * rng.standard_normal()
         phi2 = mu2 * rng.standard_normal()
-        A = np.diag([phi1, phi2]).astype(complex) + t * np.array([[0, 1], [1, 0]], dtype=complex)
+        A = (
+            np.diag([phi1, phi2]).astype(complex)
+            + t * np.array([[0, 1], [1, 0]], dtype=complex)
+        )
         U.append(expm(1j * scale * A))
     return U
+
 
 # ─── Curvature ─────────────────────────────────────────────────────────────────
 
@@ -143,6 +123,7 @@ def face_holonomies(sc, U_edges, h2=0.01):
         norms.append(float(np.linalg.norm(F)))
     return F_list, Uf_list, norms
 
+
 # ─── Hermitian endomorphism + slope filtration ─────────────────────────────────
 
 def herm_endomorphism(F_faces, omega_faces):
@@ -152,18 +133,22 @@ def herm_endomorphism(F_faces, omega_faces):
         Phi += w * F
     return (Phi + Phi.conj().T) / 2
 
+
 def slope_filtration(Phi):
     eigvals, _ = eigh(Phi)
     return sorted(eigvals.tolist(), reverse=True)
+
 
 # ─── Lie algebra + centraliser ─────────────────────────────────────────────────
 
 def lie_closure(generators, tol=1e-10):
     basis = []
+
     def normalize(x):
         x = (x - x.conj().T) / 2
         n = np.linalg.norm(x)
         return x / n if n > tol else None
+
     for g in generators:
         g_n = normalize(g)
         if g_n is not None and not any(np.linalg.norm(g_n - b) < tol for b in basis):
@@ -185,6 +170,7 @@ def lie_closure(generators, tol=1e-10):
             changed = True
     return basis
 
+
 def effective_gauge_algebra_dim(F_faces, N):
     gens = [F for F in F_faces if np.linalg.norm(F) > 1e-12]
     if not gens:
@@ -200,6 +186,7 @@ def effective_gauge_algebra_dim(F_faces, N):
     M = np.vstack(M)
     null_dim = dim - np.linalg.matrix_rank(M)
     return int(null_dim)
+
 
 # ─── Dolbeault Laplacian ───────────────────────────────────────────────────────
 
@@ -222,6 +209,7 @@ def build_dbar_sparse(sc, U_edges, N=2):
     ).tocsr()
     return Dbar
 
+
 def dolbeault_spectrum(sc, U_edges, N=2, k=10):
     Dbar = build_dbar_sparse(sc, U_edges, N)
     Lap = (Dbar.conj().T @ Dbar).tocsc()
@@ -241,13 +229,15 @@ def dolbeault_spectrum(sc, U_edges, N=2, k=10):
         eigvals = sorted(vals[:k].real.tolist())
     return eigvals
 
+
 # ─── API endpoints ─────────────────────────────────────────────────────────────
 
-@app.get("/api/health")
+@app.get("/api/health", response_model=HealthResponse)
 def health():
-    return {"status": "ok"}
+    return HealthResponse(status="ok", version="1.0.0")
 
-@app.post("/api/run")
+
+@app.post("/api/run", response_model=RunResponse)
 def run_simulation(p: RunParams):
     try:
         rng = np.random.default_rng(p.seed)
@@ -260,28 +250,31 @@ def run_simulation(p: RunParams):
         gauge_dim = effective_gauge_algebra_dim(F_faces, p.N)
         eigvals = dolbeault_spectrum(sc, U_edges, N=p.N, k=p.n_eigs)
         zero_modes = sum(1 for v in eigvals if abs(v) < 1e-7)
-        return {
-            "mesh": {"nV": sc.nV, "nE": sc.nE, "nF": sc.nF},
-            "slopes": slopes,
-            "phi_trace": float(np.trace(Phi).real),
-            "phi_norm": float(np.linalg.norm(Phi)),
-            "curv_norms": curv_norms,
-            "curv_mean": float(np.mean(curv_norms)),
-            "curv_max": float(np.max(curv_norms)),
-            "gauge_algebra_dim": gauge_dim,
-            "expected_gauge_dim": p.N * p.N,
-            "dolbeault_eigenvalues": eigvals,
-            "zero_modes": zero_modes,
-        }
+
+        return RunResponse(
+            mesh={"nV": sc.nV, "nE": sc.nE, "nF": sc.nF},
+            slopes=slopes,
+            phi_trace=float(np.trace(Phi).real),
+            phi_norm=float(np.linalg.norm(Phi)),
+            curv_norms=curv_norms,
+            curv_mean=float(np.mean(curv_norms)),
+            curv_max=float(np.max(curv_norms)),
+            gauge_algebra_dim=gauge_dim,
+            expected_gauge_dim=p.N * p.N,
+            dolbeault_eigenvalues=eigvals,
+            zero_modes=zero_modes,
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/sweep")
+
+@app.post("/api/sweep", response_model=SweepResponse)
 def wall_crossing_sweep(p: SweepParams):
     try:
         sc = build_torus4d(p.nx, p.ny, p.nz, p.nw)
         omega = np.ones(sc.nF)
         results = []
+
         for i in range(p.steps):
             t = i / (p.steps - 1)
             rng = np.random.default_rng(p.seed)
@@ -296,6 +289,10 @@ def wall_crossing_sweep(p: SweepParams):
                 "gauge_dim": gauge_dim,
                 "curv_mean": float(np.mean(curv_norms)),
             })
-        return {"sweep": results, "mesh": {"nV": sc.nV, "nE": sc.nE, "nF": sc.nF}}
+
+        return SweepResponse(
+            sweep=results,
+            mesh={"nV": sc.nV, "nE": sc.nE, "nF": sc.nF},
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
