@@ -7,26 +7,26 @@ Exposes the full pipeline as REST endpoints:
   GET  /api/health     – liveness check
 """
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-import numpy as np
-from scipy.sparse import coo_matrix, eye as speye
-from scipy.sparse.linalg import eigsh, LinearOperator, splu
-from scipy.linalg import eigh, expm
 import warnings
 
-from schemas import RunParams, SweepParams, RunResponse, SweepResponse, HealthResponse
+import numpy as np
+from fastapi import Depends, FastAPI, HTTPException, Request
+from scipy.linalg import eigh, expm
+from scipy.sparse import coo_matrix
+from scipy.sparse import eye as speye
+from scipy.sparse.linalg import LinearOperator, eigsh, splu
+
+from auth import require_auth
+from middleware import limiter, register_middleware
+from schemas import HealthResponse, RunParams, RunResponse, SweepParams, SweepResponse
 
 warnings.filterwarnings("ignore")
 
 app = FastAPI(title="CY Gauge Functor API", version="1.0.0")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Replaces the old hardcoded CORSMiddleware block —
+# reads CORS_ORIGINS, rate limiter, request logging, trusted hosts from env
+register_middleware(app)
 
 
 # ─── SimplicialComplex ─────────────────────────────────────────────────────────
@@ -234,11 +234,19 @@ def dolbeault_spectrum(sc, U_edges, N=2, k=10):
 
 @app.get("/api/health", response_model=HealthResponse)
 def health():
+    """Liveness check — always public, no auth required."""
     return HealthResponse(status="ok", version="1.0.0")
 
 
-@app.post("/api/run", response_model=RunResponse)
-def run_simulation(p: RunParams):
+@app.post("/api/run", response_model=RunResponse, dependencies=[Depends(require_auth)])
+@limiter.limit("10/minute")
+def run_simulation(request: Request, p: RunParams):
+    """
+    Full simulation: mesh build → gauge links → curvature → slope filtration
+    → Dolbeault Laplacian spectrum.
+    Requires X-API-Key header when AUTH_ENABLED=true.
+    Rate limited to 10 requests/minute per IP.
+    """
     try:
         rng = np.random.default_rng(p.seed)
         sc = build_torus4d(p.nx, p.ny, p.nz, p.nw)
@@ -268,8 +276,15 @@ def run_simulation(p: RunParams):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/sweep", response_model=SweepResponse)
-def wall_crossing_sweep(p: SweepParams):
+@app.post("/api/sweep", response_model=SweepResponse, dependencies=[Depends(require_auth)])
+@limiter.limit("5/minute")
+def wall_crossing_sweep(request: Request, p: SweepParams):
+    """
+    Wall-crossing sweep: runs the gauge pipeline at each step of mixing
+    parameter t ∈ [0, 1] and returns slope filtration per step.
+    Requires X-API-Key header when AUTH_ENABLED=true.
+    Rate limited to 5 requests/minute per IP (heavier compute than /run).
+    """
     try:
         sc = build_torus4d(p.nx, p.ny, p.nz, p.nw)
         omega = np.ones(sc.nF)
