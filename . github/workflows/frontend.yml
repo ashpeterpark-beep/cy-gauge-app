@@ -1,0 +1,115 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "App.jsx"
+      - "main.jsx"
+      - "index.html"
+      - "package.json"
+      - "vite.config.js"
+      - ".github/workflows/frontend.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "App.jsx"
+      - "main.jsx"
+      - "index.html"
+      - "package.json"
+      - "vite.config.js"
+      - ".github/workflows/frontend.yml"
+
+jobs:
+  build:
+    name: Install, Lint & Build (Node)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for lint script and run if present
+        run: |
+          if npm run | grep -q "^\s*lint"; then
+            npm run lint
+          else
+            echo "No lint script found — skipping."
+          fi
+
+      - name: Build for production
+        env:
+          # Points at a placeholder during CI; swap for real URL via repo secret in deploy jobs
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:8000' }}
+        run: npm run build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist/
+          retention-days: 7
+
+  deploy-preview:
+    name: Deploy Preview (Vercel)
+    runs-on: ubuntu-latest
+    needs: build
+    # Only runs on pull requests; remove condition to deploy every push
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist/
+
+      - name: Deploy to Vercel (preview)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+  deploy-production:
+    name: Deploy Production (Vercel)
+    runs-on: ubuntu-latest
+    needs: build
+    # Only runs on direct pushes to main (not PRs)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist/
+
+      - name: Deploy to Vercel (production)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: "--prod"
+          working-directory: ./
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
