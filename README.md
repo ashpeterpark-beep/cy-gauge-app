@@ -272,8 +272,10 @@ cy-gauge-app/
 ├── frontend/
 │   ├── src/
 │   │   ├── App.jsx
+│   │   ├── main.jsx
 │   │   ├── components/
 │   │   └── utils/
+│   ├── index.html
 │   ├── package.json
 │   ├── vite.config.js
 │   └── Dockerfile
